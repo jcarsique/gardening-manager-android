@@ -6,21 +6,17 @@ import java.util.List;
 
 import org.gots.garden.GardenInterface;
 import org.gots.garden.provider.local.LocalGardenProvider;
+import org.gots.nuxeo.NuxeoManager;
 import org.nuxeo.android.config.NuxeoServerConfig;
 import org.nuxeo.android.context.NuxeoContext;
-import org.nuxeo.android.context.NuxeoContextFactory;
 import org.nuxeo.android.documentprovider.LazyUpdatableDocumentsList;
 import org.nuxeo.android.repository.DocumentManager;
 import org.nuxeo.ecm.automation.client.android.AndroidAutomationClient;
-import org.nuxeo.ecm.automation.client.android.CachedSession;
 import org.nuxeo.ecm.automation.client.jaxrs.Session;
-import org.nuxeo.ecm.automation.client.jaxrs.impl.NotAvailableOffline;
 import org.nuxeo.ecm.automation.client.jaxrs.model.Document;
 import org.nuxeo.ecm.automation.client.jaxrs.model.Documents;
 import org.nuxeo.ecm.automation.client.jaxrs.model.IdRef;
 import org.nuxeo.ecm.automation.client.jaxrs.model.PropertyMap;
-import org.nuxeo.ecm.automation.client.jaxrs.spi.DefaultSession;
-import org.nuxeo.ecm.automation.client.jaxrs.spi.auth.TokenRequestInterceptor;
 
 import android.content.Context;
 import android.util.Log;
@@ -51,64 +47,12 @@ public class NuxeoGardenProvider extends LocalGardenProvider {
 
     protected LazyUpdatableDocumentsList documentsList;
 
-    /**
-     * Android 11+: raises a {@link android.os.NetworkOnMainThreadException} if
-     * called from the main thread and tries to
-     * perform a network call (Nuxeo server)
-     */
-    public NuxeoGardenProvider(Context context) throws NotAvailableOffline {
+    public NuxeoGardenProvider(Context context) {
         super(context);
-        myToken = gotsPrefs.getToken();
-        myLogin = gotsPrefs.getNuxeoLogin();
-        myDeviceId = gotsPrefs.getDeviceId();
-        myApp = gotsPrefs.getGardeningManagerAppname();
-        nuxeoContext = NuxeoContextFactory.getNuxeoContext(context);
-
-        nxConfig = nuxeoContext.getServerConfig();
-        // nxConfig.setLogin(myLogin);
-        // nxConfig.setPassword(gotsPrefs.getNuxeoPassword());
-        // nxConfig.setToken(myToken);
-        // Uri nxAutomationURI = Uri.parse(Uri.encode(GotsPreferences.getGardeningManagerServerURI()));
-        // nxConfig.setServerBaseUrl(nxAutomationURI);
-        nxConfig.setServerBaseUrl(gotsPrefs.getGardeningManagerServerURI());
-        // nxConfig.setCacheKey(NuxeoServerConfig.PREF_SERVER_TOKEN);
-        // nuxeoContext.onConfigChanged();
-        // nuxeoContext.getNetworkStatus().reset();
-        Log.d(TAG, "getSession with: " + nxConfig.getServerBaseUrl() + " login=" + nxConfig.getLogin() + " password="
-                + nxConfig.getPassword());
-        nuxeoClient = getNuxeoClient();
-        // getNuxeoSession();
-        // Check connectivity with Nuxeo
-        // new AsyncTask<Void, Integer, Void>() {
-        // @Override
-        // protected Void doInBackground(Void... params) {
-        // try {
-        // getNuxeoSession();
-        // } catch (NotAvailableOffline e) {
-        // throw e;
-        // }
-        //
-        // return null;
-        // }
-        // }.execute();
-
-    }
-
-    /**
-     * @return {@link CachedSession} if available, else a {@link DefaultSession}
-     * @throws NotAvailableOffline If no data in cache and the required online
-     *             session fails
-     */
-    protected Session getNuxeoSession() throws NotAvailableOffline {
-        return nuxeoContext.getSession();
     }
 
     protected AndroidAutomationClient getNuxeoClient() {
-        if (nuxeoClient == null) {
-            nuxeoClient = nuxeoContext.getNuxeoClient();
-            nuxeoClient.setRequestInterceptor(new TokenRequestInterceptor(myApp, myToken, myLogin, myDeviceId));
-        }
-        return nuxeoClient;
+        return NuxeoManager.getInstance().getNuxeoClient();
     }
 
     @Override
